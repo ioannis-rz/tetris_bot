@@ -83,7 +83,7 @@ while True:
     key = cv.waitKey(1)
     if key == ord('q'):
         break
-    
+
     elapsed_time = time.perf_counter() - t0
     avg_fps = (n_frames / elapsed_time)
     print("Average FPS DXCAM: " + str(avg_fps))
