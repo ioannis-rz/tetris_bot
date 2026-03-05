@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../Cryptography/code"
+		},
+		{
+			"name": "Cryptography",
+			"path": "../../Cryptography/code/Cryptography"
+		}
+	],
+	"settings": {}
+}
