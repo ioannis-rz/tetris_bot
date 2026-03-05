@@ -1,20 +1,20 @@
 import time
 import pyautogui
-import pynput
+from pynput.keyboard import Controller
 
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
 
 keyboard = Controller()
 
-N = 500
+N = 50000
 
 print("Testing pyautogui...")
 
 start = time.perf_counter()
 
 for _ in range(N):
-    pyautogui.press("space")
+    pyautogui.press("a")
 
 end = time.perf_counter()
 
@@ -27,8 +27,8 @@ print("\nTesting pynput...")
 start = time.perf_counter()
 
 for _ in range(N):
-    keyboard.press("space")
-    keyboard.release("space")
+    keyboard.press("a")
+    keyboard.release("a")
 
 end = time.perf_counter()
 
