@@ -75,7 +75,7 @@ n_frames = 1
 
 while True:
     frame = camera.get_latest_frame()
-    #img = np.array(img)                         # Convert to NumPy array
+    #img = np.array(img)                         #  
     small = cv.resize(frame, (0, 0), fx=0.5, fy=0.5)
     cv.imshow("Computer Vision", small)
 
