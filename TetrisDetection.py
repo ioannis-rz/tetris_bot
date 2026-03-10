@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
-
-board = np.zeros((20,10))
-#print(board)
+import dxcam
 
 def compute_sample_points(x, y, w, h):
 
@@ -51,20 +49,131 @@ def update_board_state(frame, sample_points, board):
             else:
                 board[row, col] = 1
 
+def correct_board_state(board, piece):
+    logic_board = board.copy()
+    logic_board[0:4, :] = 0
+    return logic_board
 
-frame = cv2.imread("test_images\Screenshot 2026-03-10 100228.png")
+def draw_board_state(frame, sample_points, board):
 
-# en base a la prueba, se obtuvo estas dimensiones
+    for r in range(20):
+        for c in range(10):
+
+            px, py = sample_points[r][c]
+
+            if board[r][c] == 1:
+                cv2.circle(frame, (px,py), 6, (0,255,0), -1)
+
+    return frame
+
+def extract_falling_piece(board):
+
+    visited = set()
+
+    for r in range(20):
+        for c in range(10):
+
+            if board[r][c] == 1:
+
+                # start flood fill
+                stack = [(r,c)]
+                piece = []
+
+                while stack:
+
+                    cr, cc = stack.pop()
+
+                    if (cr,cc) in visited:
+                        continue
+
+                    if cr < 0 or cr >= 20 or cc < 0 or cc >= 10:
+                        continue
+
+                    if board[cr][cc] == 0:
+                        continue
+
+                    visited.add((cr,cc))
+                    piece.append((cr,cc))
+
+                    stack.append((cr+1,cc))
+                    stack.append((cr-1,cc))
+                    stack.append((cr,cc+1))
+                    stack.append((cr,cc-1))
+
+                if len(piece) == 4:
+                    min_r = min(r for r,c in piece)
+                    min_c = min(c for r,c in piece)
+                    norm = [(r-min_r, c-min_c) for r,c in piece]
+                    h = max(r for r,c in norm) + 1
+                    w = max(c for r,c in norm) + 1
+
+                    mat = np.zeros((h,w), dtype=int)
+
+                    for r,c in norm:
+                        mat[r,c] = 1
+                    return mat
+
+    return None
+
+# cosas que se ejecutan una sola vez
+board = np.zeros((20,10))
+logic_board = np.zeros((20,10))
+#print(board)
+# en base a la prueba, se obtuvo estas dimensiones en fullscreen
 x = 808
 y = 218
 w = 342
 h = 679
-
+# para dimensiones a pantalla partida
+x = 420
+y = 404
+w = 159
+h = 315
+camera = dxcam.create(output_color="BGR")
+camera.start(target_fps=60, video_mode=True)
 samplePoints = compute_sample_points(x,y,w,h)
-preview = draw_sample_points(frame.copy(), samplePoints)
-update_board_state(frame, samplePoints, board)
-print(board)
-cv2.imshow("Sampling Grid", preview)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+#preview = draw_sample_points(frame.copy(), samplePoints) # para debug
+# crear el objeto para capturar la imagen
+
+
+print("Press S to start the bot")
+
+while True:
+    frame = camera.get_latest_frame()
+    frame = cv2.resize(frame, None, fx = 0.25, fy = 0.25, interpolation=cv2.INTER_AREA)
+    cv2.imshow("preview", frame)
+    key = cv2.waitKey(1) & 0xFF
+
+    if key == ord('s'):
+        print("Starting...")
+        cv2.destroyAllWindows()
+        break
+
+piece_active = False
+piece = None
+while True:
+
+    frame = camera.get_latest_frame()
+
+    update_board_state(frame, samplePoints, board)
+    
+    piece = extract_falling_piece(board)
+
+    if piece is not None and not piece_active:
+        piece_active = True
+        print("New piece detected")
+        logic_board = correct_board_state(board, piece)
+        #print(piece)
+
+    if piece is None:
+        piece_active = False
+
+    preview = draw_board_state(frame, samplePoints, board)
+    preview = cv2.resize(preview, None, fx = 0.5, fy = 0.5, interpolation=cv2.INTER_AREA)
+    cv2.imshow("debug halfed", preview)
+    #print(board)
+    if cv2.waitKey(1) == 27: # esc key
+        camera.stop()
+        cv2.destroyAllWindows()
+        break
 

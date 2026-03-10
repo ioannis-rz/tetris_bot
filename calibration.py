@@ -1,28 +1,29 @@
 import cv2
 import numpy as np
+import dxcam
 
 def mouse_click(event, x, y, flags, param):
-    global points, frame
+    global points, img
 
     if event == cv2.EVENT_LBUTTONDOWN:
         if len(points) < 4:
             points.append((x, y))
-            cv2.circle(frame, (x, y), 5, (0,0,255), -1)
+            cv2.circle(img, (x, y), 5, (0,0,255), -1)
             print("Point", len(points), ":", (x,y))
 
-def calibrate_board(frame): # en sentido horario
+def calibrate_board(img): # en sentido horario
 
     global points
     points = []
 
-    display = frame.copy()
+    display = img.copy()
 
     cv2.namedWindow("Calibration")
     cv2.setMouseCallback("Calibration", mouse_click)
 
     while True:
 
-        cv2.imshow("Calibration", frame)
+        cv2.imshow("Calibration", img)
 
         key = cv2.waitKey(1)
 
@@ -44,10 +45,13 @@ def calibrate_board(frame): # en sentido horario
 
     return (x, y, width, height)
 
-frame = cv2.imread("test_images\Screenshot 2026-03-10 093918.png")
-board = calibrate_board(frame)
+camera= dxcam.create()
+
+img = camera.grab()
+board = calibrate_board(img)
+print(board)
 x, y, w, h = board
-preview = frame.copy()
+preview = img.copy()
 
 cell_w = w / 10
 cell_h = h / 20
