@@ -47,3 +47,20 @@ def calibrate_board(frame): # en sentido horario
 frame = cv2.imread("test_images\Screenshot 2026-03-10 093918.png")
 board = calibrate_board(frame)
 x, y, w, h = board
+preview = frame.copy()
+
+cell_w = w / 10
+cell_h = h / 20
+
+for row in range(20):
+    for col in range(10):
+
+        px = int(x + col*cell_w + cell_w/2)
+        py = int(y + row*cell_h + cell_h/2)
+
+        cv2.circle(preview,(px,py),2,(0,0,255),-1)
+
+cv2.rectangle(preview,(x,y),(x+w,y+h),(0,255,0),2)
+cv2.imshow("Sampling Grid", preview)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
