@@ -41,7 +41,7 @@ def update_board_state(frame, sample_points, board):
             else:
                 board[row, col] = 1
 
-def correct_board_state(board, piece):
+def correct_board_state(board):
     logic_board = board.copy()
     logic_board[0:4, :] = 0
     return logic_board
@@ -137,7 +137,7 @@ while True:
 
     update_board_state(frame, samplePoints, board) # calcular el estado del tablero de juego
     
-    piece = extract_falling_piece(board) # capturtar la pieza nueva que cae, si no es un tetromino, retorna None
+    piece = extract_falling_piece(board) # capturtar la pieza nueva que cae, si easta incompleta, retorna None
 
     if piece is not None and not piece_active: # si la pieza se detecta y no hay pieza previamente detectada
         piece_active = True
