@@ -3,6 +3,41 @@ import numpy as np
 import dxcam
 import debug
 
+def count_complete_lines(board):
+
+    lines = 0
+
+    for row in range(20):
+        if all(board[row]):
+            lines += 1
+
+    return lines
+
+def get_bumpiness(heights):
+
+    bumpiness = 0
+
+    for i in range(9):
+        bumpiness += abs(heights[i] - heights[i+1])
+
+    return bumpiness
+
+def get_column_heights(board):
+
+    heights = []
+
+    for col in range(10):
+
+        column = board[:, col]
+
+        if np.any(column):
+            first_block = np.argmax(column)
+            heights.append(20 - first_block)
+        else:
+            heights.append(0)
+
+    return heights
+
 def compute_sample_points(x, y, w, h):
 
     points = []
@@ -40,6 +75,24 @@ def update_board_state(frame, sample_points, board):
                 board[row, col] = 0 
             else:
                 board[row, col] = 1
+
+def count_holes(board):
+
+    holes = 0
+
+    for col in range(10):
+
+        block_found = False
+
+        for row in range(20):
+
+            if board[row][col] != 0:
+                block_found = True
+
+            elif block_found and board[row][col] == 0:
+                holes += 1
+
+    return holes
 
 def correct_board_state(board):
     logic_board = board.copy()
@@ -95,6 +148,27 @@ def extract_falling_piece(board):
 
     return None
 
+def evaluate_board(board):
+
+    heights = get_column_heights(board)
+    aggregate_height = sum(heights)
+
+    holes = count_holes(board)
+
+    bumpiness = get_bumpiness(heights)
+
+    lines = count_complete_lines(board)
+
+    score = (
+        -0.5 * aggregate_height
+        -0.7 * holes
+        -0.3 * bumpiness
+        +1.0 * lines
+    )
+
+    return score
+
+
 # cosas que se ejecutan una sola vez
 board = np.zeros((20,10))
 logic_board = np.zeros((20,10))
@@ -143,7 +217,7 @@ while True:
         piece_active = True
         print("New piece detected")
         print(piece)
-        logic_board = correct_board_state(board, piece)
+        logic_board = correct_board_state(board)
         #print(piece)
 
     if piece is None:
