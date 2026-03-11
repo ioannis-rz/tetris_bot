@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import dxcam
+import debug
 
 def compute_sample_points(x, y, w, h):
 
@@ -24,15 +25,6 @@ def compute_sample_points(x, y, w, h):
     print(points)
     return points
 
-def draw_sample_points(frame, sample_points):
-
-    for row in sample_points:
-        for (px,py) in row:
-
-            cv2.circle(frame,(px,py),2,(0,0,255),-1)
-
-    return frame
-
 def update_board_state(frame, sample_points, board):
     for row in range(20):
         for col in range(10):
@@ -53,18 +45,6 @@ def correct_board_state(board, piece):
     logic_board = board.copy()
     logic_board[0:4, :] = 0
     return logic_board
-
-def draw_board_state(frame, sample_points, board):
-
-    for r in range(20):
-        for c in range(10):
-
-            px, py = sample_points[r][c]
-
-            if board[r][c] == 1:
-                cv2.circle(frame, (px,py), 6, (0,255,0), -1)
-
-    return frame
 
 def extract_falling_piece(board):
 
@@ -132,7 +112,7 @@ h = 315
 camera = dxcam.create(output_color="BGR")
 camera.start(target_fps=60, video_mode=True)
 samplePoints = compute_sample_points(x,y,w,h)
-#preview = draw_sample_points(frame.copy(), samplePoints) # para debug
+#preview = debug.draw_sample_points(frame.copy(), samplePoints) # para debug
 # crear el objeto para capturar la imagen
 
 
@@ -155,22 +135,23 @@ while True:
 
     frame = camera.get_latest_frame()
 
-    update_board_state(frame, samplePoints, board)
+    update_board_state(frame, samplePoints, board) # calcular el estado del tablero de juego
     
-    piece = extract_falling_piece(board)
+    piece = extract_falling_piece(board) # capturtar la pieza nueva que cae, si no es un tetromino, retorna None
 
-    if piece is not None and not piece_active:
+    if piece is not None and not piece_active: # si la pieza se detecta y no hay pieza previamente detectada
         piece_active = True
         print("New piece detected")
+        print(piece)
         logic_board = correct_board_state(board, piece)
         #print(piece)
 
     if piece is None:
         piece_active = False
 
-    preview = draw_board_state(frame, samplePoints, board)
+    preview = debug.draw_board_state(frame, samplePoints, board)
     preview = cv2.resize(preview, None, fx = 0.5, fy = 0.5, interpolation=cv2.INTER_AREA)
-    cv2.imshow("debug halfed", preview)
+    cv2.imshow("debug screen", preview)
     #print(board)
     if cv2.waitKey(1) == 27: # esc key
         camera.stop()
