@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import dxcam
 import debug
+from pynput.keyboard import Controller
 
 TETROMINOS = {
 
@@ -84,6 +85,13 @@ TETROMINOS = {
          [1,0]]
     ]
 }
+
+MOVE_RIGHT = 'right'
+MOVE_LEFT = "left"
+MOVE_DOWN = "down"
+SNAP_DOWN = "space"
+ROTATE = "ctrl"
+SAVE = "shift"
 
 def count_complete_lines(board):
 
@@ -188,9 +196,8 @@ def get_falling_piece(board):
     for r in range(20):
         for c in range(10):
 
-            if board[r][c] == 1:
+            if board[r][c] == 1 and (r,c) not in visited:
 
-                # start flood fill
                 stack = [(r,c)]
                 piece = []
 
@@ -200,33 +207,40 @@ def get_falling_piece(board):
 
                     if (cr,cc) in visited:
                         continue
-
                     if cr < 0 or cr >= 20 or cc < 0 or cc >= 10:
                         continue
-
                     if board[cr][cc] == 0:
                         continue
 
                     visited.add((cr,cc))
                     piece.append((cr,cc))
 
-                    stack.append((cr+1,cc))
-                    stack.append((cr-1,cc))
-                    stack.append((cr,cc+1))
-                    stack.append((cr,cc-1))
+                    stack.extend([
+                        (cr+1,cc),(cr-1,cc),
+                        (cr,cc+1),(cr,cc-1)
+                    ])
 
                 if len(piece) == 4:
+
+                    # normalize coordinates
                     min_r = min(r for r,c in piece)
                     min_c = min(c for r,c in piece)
+
                     norm = [(r-min_r, c-min_c) for r,c in piece]
+
                     h = max(r for r,c in norm) + 1
                     w = max(c for r,c in norm) + 1
 
-                    mat = np.zeros((h,w), dtype=int)
+                    mat = [[0]*w for _ in range(h)]
 
                     for r,c in norm:
-                        mat[r,c] = 1
-                    return mat
+                        mat[r][c] = 1
+
+                    # compare with tetromino dictionary
+                    for name, rotations in TETROMINOS.items():
+                        for rot in rotations:
+                            if mat == rot:
+                                return name, rot
 
     return None
 
@@ -250,6 +264,58 @@ def evaluate_board(board):
 
     return score
 
+def collision(board, piece, row, col):
+
+    for r in range(len(piece)):
+        for c in range(len(piece[0])):
+
+            if piece[r][c]:
+
+                rr = row + r
+                cc = col + c
+
+                if rr >= 20 or cc < 0 or cc >= 10 or board[rr][cc]:
+                    return True
+    return False
+
+def place_piece(board, piece, row, col):
+
+    new = board.copy()
+
+    for r in range(len(piece)):
+        for c in range(len(piece[0])):
+            if piece[r][c]:
+                new[row+r][col+c] = 1
+
+    return new
+
+def find_best_move(board, piece_name):
+
+    best_score = -1e9
+    best_move = None
+
+    for rotation in TETROMINOS[piece_name]:
+
+        h = len(rotation)
+        w = len(rotation[0])
+
+        for col in range(10 - w + 1):
+
+            row = 0
+
+            # drop piece
+            while not collision(board, rotation, row+1, col):
+                row += 1
+
+            new_board = place_piece(board, rotation, row, col)
+
+            score = evaluate_board(new_board)
+
+            if score > best_score:
+                best_score = score
+                best_move = (rotation, col)
+
+    return best_move
 
 # cosas que se ejecutan una sola vez
 board = np.zeros((20,10))
@@ -270,7 +336,6 @@ camera.start(target_fps=60, video_mode=True)
 samplePoints = compute_sample_points(x,y,w,h)
 #preview = debug.draw_sample_points(frame.copy(), samplePoints) # para debug
 # crear el objeto para capturar la imagen
-
 
 print("Press S to start the bot")
 
@@ -300,7 +365,8 @@ while True:
         piece_active = True
         print("New piece detected")
         print(piece)
-        logic_board = correct_board_state(board)
+        logic_board = correct_board_state(board.copy())
+        best_move = find_best_move(logic_board, piece[0])
         #print(piece)
 
     if piece is None:
