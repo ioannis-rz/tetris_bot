@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import dxcam
 import debug
-from pynput.keyboard import Controller
-
+from pynput.keyboard import Controller, Key
+import time
 TETROMINOS = {
 
     "I": [
@@ -86,12 +86,12 @@ TETROMINOS = {
     ]
 }
 
-MOVE_RIGHT = 'right'
-MOVE_LEFT = "left"
-MOVE_DOWN = "down"
-SNAP_DOWN = "space"
-ROTATE = "ctrl"
-SAVE = "shift"
+MOVE_RIGHT = Key.right
+MOVE_LEFT = Key.left
+MOVE_DOWN = Key.down
+SNAP_DOWN = Key.space
+ROTATE = "z"
+SAVE = 'c'
 
 def count_complete_lines(board):
 
@@ -193,7 +193,7 @@ def get_falling_piece(board):
 
     visited = set()
 
-    for r in range(20):
+    for r in range(4):
         for c in range(10):
 
             if board[r][c] == 1 and (r,c) not in visited:
@@ -238,10 +238,9 @@ def get_falling_piece(board):
 
                     # compare with tetromino dictionary
                     for name, rotations in TETROMINOS.items():
-                        for rot in rotations:
+                        for i, rot in enumerate(rotations):
                             if mat == rot:
-                                return name, rot
-
+                                return name, i, min_c
     return None
 
 def evaluate_board(board):
@@ -256,10 +255,10 @@ def evaluate_board(board):
     lines = count_complete_lines(board)
 
     score = (
-        -0.5 * aggregate_height
+        -0.8 * aggregate_height
         -0.7 * holes
         -0.3 * bumpiness
-        +1.0 * lines
+        +10.0 * lines
     )
 
     return score
@@ -294,7 +293,7 @@ def find_best_move(board, piece_name):
     best_score = -1e9
     best_move = None
 
-    for rotation in TETROMINOS[piece_name]:
+    for i, rotation in enumerate(TETROMINOS[piece_name]):
 
         h = len(rotation)
         w = len(rotation[0])
@@ -313,9 +312,38 @@ def find_best_move(board, piece_name):
 
             if score > best_score:
                 best_score = score
-                best_move = (rotation, col)
+                best_move = (i, col)
 
     return best_move
+
+def calculate_moves(piece, best_move):
+
+    piece_name, current_rot, current_col = piece
+    target_rot, target_col = best_move
+
+    moves = []
+
+    # calcular rotaciones necesarias
+    rotations_needed = (target_rot - current_rot) % len(TETROMINOS[piece_name])
+
+    for _ in range(rotations_needed):
+        moves.append(ROTATE)
+
+    # calcular movimiento horizontal
+    diff = target_col - current_col
+
+    if diff > 0:
+        for _ in range(diff):
+            moves.append(MOVE_RIGHT)
+
+    elif diff < 0:
+        for _ in range(-diff):
+            moves.append(MOVE_LEFT)
+
+    # hard drop al final
+    moves.append(SNAP_DOWN)
+
+    return moves
 
 # cosas que se ejecutan una sola vez
 board = np.zeros((20,10))
@@ -334,6 +362,8 @@ h = 315
 camera = dxcam.create(output_color="BGR")
 camera.start(target_fps=60, video_mode=True)
 samplePoints = compute_sample_points(x,y,w,h)
+keyboard = Controller()
+
 #preview = debug.draw_sample_points(frame.copy(), samplePoints) # para debug
 # crear el objeto para capturar la imagen
 
@@ -365,9 +395,15 @@ while True:
         piece_active = True
         print("New piece detected")
         print(piece)
+        print(piece[0])
         logic_board = correct_board_state(board.copy())
         best_move = find_best_move(logic_board, piece[0])
-        #print(piece)
+
+        moves = calculate_moves(piece, best_move)
+
+        for move in moves:
+            keyboard.tap(move)
+            time.sleep(0.2)
 
     if piece is None:
         piece_active = False
