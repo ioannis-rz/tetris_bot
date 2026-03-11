@@ -3,6 +3,88 @@ import numpy as np
 import dxcam
 import debug
 
+TETROMINOS = {
+
+    "I": [
+        [[1,1,1,1]],
+        [[1],
+         [1],
+         [1],
+         [1]]
+    ],
+
+    "O": [
+        [[1,1],
+         [1,1]]
+    ],
+
+    "T": [
+        [[0,1,0],
+         [1,1,1]],
+
+        [[1,0],
+         [1,1],
+         [1,0]],
+
+        [[1,1,1],
+         [0,1,0]],
+
+        [[0,1],
+         [1,1],
+         [0,1]]
+    ],
+
+    "L": [
+        [[1,0],
+         [1,0],
+         [1,1]],
+
+        [[1,1,1],
+         [1,0,0]],
+
+        [[1,1],
+         [0,1],
+         [0,1]],
+
+        [[0,0,1],
+         [1,1,1]]
+    ],
+
+    "J": [
+        [[0,1],
+         [0,1],
+         [1,1]],
+
+        [[1,0,0],
+         [1,1,1]],
+
+        [[1,1],
+         [1,0],
+         [1,0]],
+
+        [[1,1,1],
+         [0,0,1]]
+    ],
+
+    "S": [
+        [[0,1,1],
+         [1,1,0]],
+
+        [[1,0],
+         [1,1],
+         [0,1]]
+    ],
+
+    "Z": [
+        [[1,1,0],
+         [0,1,1]],
+
+        [[0,1],
+         [1,1],
+         [1,0]]
+    ]
+}
+
 def count_complete_lines(board):
 
     lines = 0
@@ -99,7 +181,7 @@ def correct_board_state(board):
     logic_board[0:4, :] = 0
     return logic_board
 
-def extract_falling_piece(board):
+def get_falling_piece(board):
 
     visited = set()
 
@@ -205,13 +287,14 @@ while True:
 
 piece_active = False
 piece = None
+#print(TETROMINOS["I"])
 while True:
 
     frame = camera.get_latest_frame()
 
     update_board_state(frame, samplePoints, board) # calcular el estado del tablero de juego
     
-    piece = extract_falling_piece(board) # capturtar la pieza nueva que cae, si easta incompleta, retorna None
+    piece = get_falling_piece(board) # capturtar la pieza nueva que cae, si easta incompleta, retorna None
 
     if piece is not None and not piece_active: # si la pieza se detecta y no hay pieza previamente detectada
         piece_active = True
