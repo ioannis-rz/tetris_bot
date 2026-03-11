@@ -1,3 +1,5 @@
+import cv2
+
 def draw_sample_points(frame, sample_points):
 
     for row in sample_points:
