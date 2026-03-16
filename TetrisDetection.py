@@ -94,15 +94,17 @@ SNAP_DOWN = Key.space
 ROTATELEFT = "z"
 SAVE = 'c'
 
-def count_complete_lines(board):
+def clear_lines(board):
 
-    lines = 0
+    full_rows = [r for r in range(20) if all(board[r])]
+    cleared = len(full_rows)
 
-    for row in range(20):
-        if all(board[row]):
-            lines += 1
+    if cleared > 0:
+        board = np.delete(board, full_rows, axis=0)
+        new_rows = np.zeros((len(full_rows), 10))
+        board = np.vstack((new_rows, board))
 
-    return lines
+    return board, cleared
 
 def get_bumpiness(heights):
 
@@ -147,7 +149,7 @@ def count_holes(board):
 
     return holes
 
-def evaluate_board(board):
+def evaluate_board(board, cleared):
 
     heights = get_column_heights(board)
     aggregate_height = sum(heights)
@@ -156,13 +158,11 @@ def evaluate_board(board):
 
     bumpiness = get_bumpiness(heights)
 
-    lines = count_complete_lines(board)
-
     score = (
         -0.8 * aggregate_height
         -0.7 * holes
         -0.3 * bumpiness
-        +10.0 * lines
+        +10.0 * cleared
     )
 
     return score
@@ -190,7 +190,9 @@ def place_piece(board, piece, row, col):
             if piece[r][c]:
                 new[row+r][col+c] = 1
 
-    return new
+    new, cleared = clear_lines(new)
+
+    return new, cleared
 
 class Enviroment:
     def __init__(self):
@@ -347,9 +349,9 @@ class Agent:
                 while not collision(board, rotation, row+1, col):
                     row += 1
 
-                new_board = place_piece(board, rotation, row, col)
+                new_board, cleared = place_piece(board, rotation, row, col)
 
-                score = evaluate_board(new_board)
+                score = evaluate_board(new_board, cleared)
 
                 if score > best_score:
                     best_score = score
@@ -438,10 +440,10 @@ while True:
     piece = vision.get_falling_piece() # capturtar la pieza nueva que cae, si easta incompleta, retorna None
     # print(piece)
 
-    # moves = agent.update(vision.board.copy(), piece)
+    moves = agent.update(vision.board.copy(), piece)
 
-    #if moves:
-    #   env.act(moves)
+    if moves:
+       env.act(moves)
     
     preview = debug.draw_board_state(frame, vision.sample_points, vision.board)
     preview = cv2.resize(preview, None, fx = 0.5, fy = 0.5, interpolation=cv2.INTER_AREA)
