@@ -92,6 +92,7 @@ MOVE_LEFT = Key.left
 MOVE_DOWN = Key.down
 SNAP_DOWN = Key.space
 ROTATELEFT = "z"
+ROTATERIGHT =  "x"
 SAVE = 'c'
 
 def clear_lines(board):
@@ -159,10 +160,10 @@ def evaluate_board(board, cleared):
     bumpiness = get_bumpiness(heights)
 
     score = (
-        -0.8 * aggregate_height
-        -0.7 * holes
-        -0.3 * bumpiness
-        +10.0 * cleared
+        -0.510066 * aggregate_height
+        -0.760666 * holes
+        -0.184483 * bumpiness
+        +0.760666 * cleared
     )
 
     return score
@@ -399,7 +400,7 @@ class Agent:
         moves.append(SNAP_DOWN)
         return moves
 
-# para dimensiones a pantalla partida, prioducto de calibration
+# para dimensiones a pantalla partida, producto de calibration
 x = 697
 y = 549
 w = 172
@@ -433,15 +434,12 @@ while True:
 
     # calcular el estado del tablero de juego
     vision.update_board_state(frame) 
-    # print(vision.board)
 
     if last_board is None or not np.array_equal(vision.board, last_board):
-        # print()
         last_board = vision.board.copy()
 
     # capturtar la pieza nueva que cae, si easta incompleta, retorna None
     piece = vision.get_falling_piece() 
-    # print(piece)
     
     moves = agent.update(vision.board.copy(), piece)
     if moves:

@@ -50,3 +50,8 @@ def print_move_info(piece, best_move, moves):
     print(f"Target column: {best_move[1]}")
     print_moves(moves)
     print("-" * 40)
+
+def print_piece(piece):
+    print(f"Piece: {piece[0]}")
+    print(f"Current rotation: {piece[1]}")
+    print(f"Current column: {piece[2]}")
