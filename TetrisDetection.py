@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import dxcam
-import debug
 from pynput.keyboard import Controller, Key
 import time
 
@@ -397,10 +396,10 @@ y = 218
 w = 342
 h = 679
 # para dimensiones a pantalla partida
-x = 420
-y = 404
-w = 159
-h = 315
+x = 697
+y = 549
+w = 172
+h = 343
 # samplePoints = compute_sample_points(x,y,w,h)
 
 #preview = debug.draw_sample_points(frame.copy(), samplePoints) # para debug
