@@ -312,19 +312,29 @@ class Agent:
         self.piece_active = False
 
     def update(self, board, piece):
-       
+        
         if piece is not None and not self.piece_active:
-
             self.piece_active = True
             self.correct_board_state(board)
             best_move = self.find_best_move(self.logic_board, piece[0])
-            moves = self.calculate_moves(piece, best_move)
-            return moves
+            
+            # Phase 1: only rotate
+            rotation_moves = self.calculate_rotation(piece, best_move)
+            self.pending_move = best_move  # remember target for phase 2
+            self.rotating = True
+            return rotation_moves
+
+        if piece is not None and self.rotating:
+            # Phase 2: piece has been re-detected after rotation, now move horizontally
+            self.rotating = False
+            horizontal_moves = self.calculate_horizontal(piece, self.pending_move)
+            return horizontal_moves
 
         if piece is None:
             self.piece_active = False
+            self.rotating = False
 
-        return None 
+        return None
 
     def correct_board_state(self, board):
         self.logic_board = board.copy()
@@ -359,33 +369,32 @@ class Agent:
 
         return best_move
 
-    def calculate_moves(self, piece, best_move):
-
+    def calculate_rotation(self, piece, best_move):
         piece_name, current_rot, current_col = piece
-        target_rot, target_col = best_move
+        target_rot, _ = best_move
 
         moves = []
-
-        # calcular rotaciones necesarias
         rotations_needed = (current_rot - target_rot) % len(TETROMINOS[piece_name])
-
         for _ in range(rotations_needed):
             moves.append(ROTATELEFT)
 
-        # calcular movimiento horizontal
+        return moves
+
+    def calculate_horizontal(self, piece, best_move):
+        piece_name, current_rot, current_col = piece  # current_col is now post-rotation
+        _, target_col = best_move
+
+        moves = []
         diff = target_col - current_col
 
         if diff > 0:
             for _ in range(diff):
                 moves.append(MOVE_RIGHT)
-
         elif diff < 0:
             for _ in range(-diff):
                 moves.append(MOVE_LEFT)
 
-        # hard drop al final
         moves.append(SNAP_DOWN)
-
         return moves
 
 # para dimensiones a pantalla partida, prioducto de calibration
@@ -435,9 +444,27 @@ while True:
 
     moves = agent.update(vision.board.copy(), piece)
     if moves:
-    #    env.act(moves)
+        env.act(moves)
+        pass
+
+    if agent.rotating:
+
+        frame=env.get_frame()
+        vision.update_board_state(frame)
+        piece = vision.get_falling_piece()
+        print("rotation phase")
         print(vision.board)
-        debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
+        # debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
+
+        moves = agent.update(vision.board.copy(), piece)
+
+        if moves:
+            env.act(moves)
+            print("Horizontal move phase")
+            print(vision.board)
+            # debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
+
+
 
     preview = debug.draw_board_state(frame, vision.sample_points, vision.board)
     preview = cv2.resize(preview, None, fx = 0.25, fy = 0.25, interpolation=cv2.INTER_AREA)
