@@ -327,8 +327,7 @@ class Agent:
         if piece is not None and self.rotating:
             # Phase 2: piece has been re-detected after rotation, now move horizontally
             self.rotating = False
-            horizontal_moves = self.calculate_horizontal(piece, self.pending_move)
-            return horizontal_moves
+            return self.calculate_horizontal(piece, self.pending_move)
 
         if piece is None:
             self.piece_active = False
@@ -444,6 +443,9 @@ while True:
 
     moves = agent.update(vision.board.copy(), piece)
     if moves:
+        print("rotation phase")
+        print(vision.board)
+        debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
         env.act(moves)
         pass
 
@@ -452,17 +454,14 @@ while True:
         frame=env.get_frame()
         vision.update_board_state(frame)
         piece = vision.get_falling_piece()
-        print("rotation phase")
-        print(vision.board)
-        # debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
-
         moves = agent.update(vision.board.copy(), piece)
 
         if moves:
-            env.act(moves)
             print("Horizontal move phase")
             print(vision.board)
-            # debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
+            debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
+            env.act(moves)
+
 
 
 
