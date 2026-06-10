@@ -310,6 +310,8 @@ class Agent:
     def __init__(self):
         self.logic_board = np.zeros((20,10))
         self.piece_active = False
+        self.rotating = False
+        self.pending_move = None
 
     def update(self, board, piece):
         
@@ -317,15 +319,16 @@ class Agent:
             self.piece_active = True
             self.correct_board_state(board)
             best_move = self.find_best_move(self.logic_board, piece[0])
-            
-            # Phase 1: only rotate
+            self.pending_move = best_move
             rotation_moves = self.calculate_rotation(piece, best_move)
-            self.pending_move = best_move  # remember target for phase 2
-            self.rotating = True
+            self.rotating = len(rotation_moves) > 0  # only set rotating if we actually need to rotate
+            if not self.rotating:
+                # no rotation needed, go straight to horizontal
+                horizontal_moves = self.calculate_horizontal(piece, best_move)
+                return horizontal_moves
             return rotation_moves
 
         if piece is not None and self.rotating:
-            # Phase 2: piece has been re-detected after rotation, now move horizontally
             self.rotating = False
             return self.calculate_horizontal(piece, self.pending_move)
 
@@ -421,7 +424,6 @@ while True:
         cv2.destroyAllWindows()
         break
 
-#print(TETROMINOS["I"])
 last_board = None
 
 while True:
@@ -443,27 +445,11 @@ while True:
     
     moves = agent.update(vision.board.copy(), piece)
     if moves:
-        print("rotation phase")
+        if agent.rotating:
+            print("rotation phase")
+        else:
+            print("Horizontal move phase")
         print(vision.board)
         debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
         env.act(moves)
-
-    frame=env.get_frame()
-    vision.update_board_state(frame)
-    piece = vision.get_falling_piece()
-    moves = agent.update(vision.board.copy(), piece)
-    if moves:
-        print("Horizontal move phase")
-        print(vision.board)
-        debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
-        env.act(moves)
-
-    preview = debug.draw_board_state(frame, vision.sample_points, vision.board)
-    preview = cv2.resize(preview, None, fx = 0.25, fy = 0.25, interpolation=cv2.INTER_AREA)
-    cv2.imshow("debug screen", preview)
-    #print(board)
-    if cv2.waitKey(1) == 27: # esc key
-        env.camera.stop()
-        cv2.destroyAllWindows()
-        break
 
