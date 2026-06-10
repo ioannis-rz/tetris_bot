@@ -181,7 +181,7 @@ def collision(board, piece, row, col):
                     return True
     return False
 
-def place_piece(board, piece, row, col):
+def place_piece(board, piece, row, col ):
 
     new = board.copy()
 
@@ -206,7 +206,7 @@ class Enviroment:
     def act(self, moves):
         for move in moves:
             self.keyboard.tap(move)
-            time.sleep(0.2)    
+            time.sleep(0.1)    
 
 class AgentPerception:
 
