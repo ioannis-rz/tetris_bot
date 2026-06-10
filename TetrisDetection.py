@@ -195,6 +195,7 @@ def place_piece(board, piece, row, col ):
 
     return new, cleared
 
+
 class Enviroment:
     def __init__(self):
         self.camera = dxcam.create(output_color="BGR")
@@ -209,7 +210,7 @@ class Enviroment:
             self.keyboard.tap(move)
             time.sleep(0.1)    
 
-class AgentPerception:
+class Agent_Perception:
 
     def __init__(self, x, y, w, h):
         self.sample_points = self.compute_sample_points(x,y,w,h)   
@@ -407,11 +408,10 @@ w = 172
 h = 343
 #preview = debug.draw_sample_points(frame.copy(), samplePoints) # para debug
 
-
 print("Press S to start the bot")
 
 env = Enviroment()
-vision = AgentPerception(x,y,w,h)
+vision = Agent_Perception(x,y,w,h)
 agent = Agent()
 
 while True:
@@ -451,3 +451,4 @@ while True:
         debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
         env.act(moves)
 
+ 
