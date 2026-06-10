@@ -1,6 +1,7 @@
 import cv2
-import numpy as np
+import debug
 import dxcam
+import numpy as np
 from pynput.keyboard import Controller, Key
 import time
 
@@ -387,23 +388,13 @@ class Agent:
 
         return moves
 
-
-# cosas que se ejecutan una sola vez
-#print(board)
-# en base a la prueba, se obtuvo estas dimensiones en fullscreen
-x = 808
-y = 218
-w = 342
-h = 679
-# para dimensiones a pantalla partida
+# para dimensiones a pantalla partida, prioducto de calibration
 x = 697
 y = 549
 w = 172
 h = 343
-# samplePoints = compute_sample_points(x,y,w,h)
-
 #preview = debug.draw_sample_points(frame.copy(), samplePoints) # para debug
-# crear el objeto para capturar la imagen
+
 
 print("Press S to start the bot")
 
@@ -427,25 +418,29 @@ last_board = None
 
 while True:
 
+    # capturar frame
     frame = env.get_frame()
 
-    vision.update_board_state(frame) # calcular el estado del tablero de juego
+    # calcular el estado del tablero de juego
+    vision.update_board_state(frame) 
     # print(vision.board)
+
     if last_board is None or not np.array_equal(vision.board, last_board):
-        print(vision.board)
-        print()
+        # print()
         last_board = vision.board.copy()
 
-    piece = vision.get_falling_piece() # capturtar la pieza nueva que cae, si easta incompleta, retorna None
+    # capturtar la pieza nueva que cae, si easta incompleta, retorna None
+    piece = vision.get_falling_piece() 
     # print(piece)
 
     moves = agent.update(vision.board.copy(), piece)
-
     if moves:
-       env.act(moves)
-    
+    #    env.act(moves)
+        print(vision.board)
+        debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
+
     preview = debug.draw_board_state(frame, vision.sample_points, vision.board)
-    preview = cv2.resize(preview, None, fx = 0.5, fy = 0.5, interpolation=cv2.INTER_AREA)
+    preview = cv2.resize(preview, None, fx = 0.25, fy = 0.25, interpolation=cv2.INTER_AREA)
     cv2.imshow("debug screen", preview)
     #print(board)
     if cv2.waitKey(1) == 27: # esc key
