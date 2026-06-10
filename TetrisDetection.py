@@ -440,30 +440,23 @@ while True:
     # capturtar la pieza nueva que cae, si easta incompleta, retorna None
     piece = vision.get_falling_piece() 
     # print(piece)
-
+    
     moves = agent.update(vision.board.copy(), piece)
     if moves:
         print("rotation phase")
         print(vision.board)
         debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
         env.act(moves)
-        pass
 
-    if agent.rotating:
-
-        frame=env.get_frame()
-        vision.update_board_state(frame)
-        piece = vision.get_falling_piece()
-        moves = agent.update(vision.board.copy(), piece)
-
-        if moves:
-            print("Horizontal move phase")
-            print(vision.board)
-            debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
-            env.act(moves)
-
-
-
+    frame=env.get_frame()
+    vision.update_board_state(frame)
+    piece = vision.get_falling_piece()
+    moves = agent.update(vision.board.copy(), piece)
+    if moves:
+        print("Horizontal move phase")
+        print(vision.board)
+        debug.print_move_info(piece, agent.find_best_move(vision.board,piece[0]), moves)
+        env.act(moves)
 
     preview = debug.draw_board_state(frame, vision.sample_points, vision.board)
     preview = cv2.resize(preview, None, fx = 0.25, fy = 0.25, interpolation=cv2.INTER_AREA)
