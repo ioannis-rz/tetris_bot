@@ -203,7 +203,7 @@ class Agent_Perception:
                 row_points.append((px,py))
 
             points.append(row_points)
-        print(points)
+        # print(points)
         return points
 
 class Agent:
