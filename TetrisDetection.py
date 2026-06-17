@@ -95,107 +95,6 @@ ROTATELEFT = "z"
 ROTATERIGHT =  "x"
 SAVE = 'c'
 
-def clear_lines(board):
-
-    full_rows = [r for r in range(20) if all(board[r])]
-    cleared = len(full_rows)
-
-    if cleared > 0:
-        board = np.delete(board, full_rows, axis=0)
-        new_rows = np.zeros((len(full_rows), 10))
-        board = np.vstack((new_rows, board))
-
-    return board, cleared
-
-def get_bumpiness(heights):
-
-    bumpiness = 0
-
-    for i in range(9):
-        bumpiness += abs(heights[i] - heights[i+1])
-
-    return bumpiness
-
-def get_column_heights(board):
-
-    heights = []
-
-    for col in range(10):
-
-        column = board[:, col]
-
-        if np.any(column):
-            first_block = np.argmax(column)
-            heights.append(20 - first_block)
-        else:
-            heights.append(0)
-
-    return heights
-
-def count_holes(board):
-
-    holes = 0
-
-    for col in range(10):
-
-        block_found = False
-
-        for row in range(20):
-
-            if board[row][col] != 0:
-                block_found = True
-
-            elif block_found and board[row][col] == 0:
-                holes += 1
-
-    return holes
-
-def evaluate_board(board, cleared):
-
-    heights = get_column_heights(board)
-    aggregate_height = sum(heights)
-
-    holes = count_holes(board)
-
-    bumpiness = get_bumpiness(heights)
-
-    score = (
-        -0.510066 * aggregate_height
-        -0.760666 * holes
-        -0.184483 * bumpiness
-        +0.760666 * cleared
-    )
-
-    return score
-
-def collision(board, piece, row, col):
-
-    for r in range(len(piece)):
-        for c in range(len(piece[0])):
-
-            if piece[r][c]:
-
-                rr = row + r
-                cc = col + c
-
-                if rr >= 20 or cc < 0 or cc >= 10 or board[rr][cc]:
-                    return True
-    return False
-
-def place_piece(board, piece, row, col ):
-
-    new = board.copy()
-
-    for r in range(len(piece)):
-        for c in range(len(piece[0])):
-            if piece[r][c]:
-                new[row+r][col+c] = 1
-
-    new, cleared = clear_lines(new)
-
-    return new, cleared
-
-
 class Enviroment:
     def __init__(self):
         self.camera = dxcam.create(output_color="BGR")
@@ -360,12 +259,12 @@ class Agent:
                 row = 0
 
                 # drop piece
-                while not collision(board, rotation, row+1, col):
+                while not self.collision(board, rotation, row+1, col):
                     row += 1
 
-                new_board, cleared = place_piece(board, rotation, row, col)
+                new_board, cleared = self.place_piece(board, rotation, row, col)
 
-                score = evaluate_board(new_board, cleared)
+                score = self.evaluate_board(new_board, cleared)
 
                 if score > best_score:
                     best_score = score
@@ -400,6 +299,106 @@ class Agent:
 
         moves.append(SNAP_DOWN)
         return moves
+
+    def clear_lines(self, board):
+
+        full_rows = [r for r in range(20) if all(board[r])]
+        cleared = len(full_rows)
+
+        if cleared > 0:
+            board = np.delete(board, full_rows, axis=0)
+            new_rows = np.zeros((len(full_rows), 10))
+            board = np.vstack((new_rows, board))
+
+        return board, cleared
+
+    def get_bumpiness(self, heights):
+
+        bumpiness = 0
+
+        for i in range(9):
+            bumpiness += abs(heights[i] - heights[i+1])
+
+        return bumpiness
+
+    def get_column_heights(self, board):
+
+        heights = []
+
+        for col in range(10):
+
+            column = board[:, col]
+
+            if np.any(column):
+                first_block = np.argmax(column)
+                heights.append(20 - first_block)
+            else:
+                heights.append(0)
+
+        return heights
+
+    def count_holes(self, board):
+
+        holes = 0
+
+        for col in range(10):
+
+            block_found = False
+
+            for row in range(20):
+
+                if board[row][col] != 0:
+                    block_found = True
+
+                elif block_found and board[row][col] == 0:
+                    holes += 1
+
+        return holes
+
+    def evaluate_board(self, board, cleared):
+
+        heights = self.get_column_heights(board)
+        aggregate_height = sum(heights)
+
+        holes = self.count_holes(board)
+
+        bumpiness = self.get_bumpiness(heights)
+
+        score = (
+            -0.510066 * aggregate_height
+            -0.760666 * holes
+            -0.184483 * bumpiness
+            +0.760666 * cleared
+        )
+
+        return score
+
+    def collision(self, board, piece, row, col):
+
+        for r in range(len(piece)):
+            for c in range(len(piece[0])):
+
+                if piece[r][c]:
+
+                    rr = row + r
+                    cc = col + c
+
+                    if rr >= 20 or cc < 0 or cc >= 10 or board[rr][cc]:
+                        return True
+        return False
+
+    def place_piece(self, board, piece, row, col ):
+
+        new = board.copy()
+
+        for r in range(len(piece)):
+            for c in range(len(piece[0])):
+                if piece[r][c]:
+                    new[row+r][col+c] = 1
+
+        new, cleared = self.clear_lines(new)
+
+        return new, cleared
 
 # para dimensiones a pantalla partida, producto de calibration
 x = 697
