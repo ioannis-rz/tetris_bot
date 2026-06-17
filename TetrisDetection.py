@@ -277,10 +277,14 @@ class Agent:
         target_rot, _ = best_move
 
         moves = []
-        rotations_needed = (current_rot - target_rot) % len(TETROMINOS[piece_name])
-        for _ in range(rotations_needed):
-            moves.append(ROTATELEFT)
-
+        left_rotations_needed = (current_rot - target_rot) % len(TETROMINOS[piece_name])
+        right_rotations_needed = (target_rot - current_rot) % len(TETROMINOS[piece_name])
+        if left_rotations_needed <= right_rotations_needed:
+            for _ in range(left_rotations_needed):
+                moves.append(ROTATELEFT)
+        else:
+            for _ in range(right_rotations_needed):
+                moves.append(ROTATERIGHT)
         return moves
 
     def calculate_horizontal(self, piece, best_move):
