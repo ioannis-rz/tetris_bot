@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import dxcam
 
-def mouse_click(event, x, y, flags, param):
+def mouse_click(event, x, y):
     global points, img
 
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -11,7 +11,7 @@ def mouse_click(event, x, y, flags, param):
             cv2.circle(img, (x, y), 5, (0,0,255), -1)
             print("Point", len(points), ":", (x,y))
 
-def calibrate_board(img): # en sentido horario
+def calibrate_board(img): 
 
     global points
     points = []
@@ -45,6 +45,9 @@ def calibrate_board(img): # en sentido horario
 
     return (x, y, width, height)
 
+
+# Select the four corners of the game board clockwise. Top left corner first
+
 camera= dxcam.create()
 
 img = camera.grab()
@@ -68,3 +71,4 @@ cv2.rectangle(preview,(x,y),(x+w,y+h),(0,255,0),2)
 cv2.imshow("Sampling Grid", preview)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
